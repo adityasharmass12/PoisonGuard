@@ -98,7 +98,7 @@ project-root/
 ## Installation
 
 ### Clone the Repository
-git clone https://github.com/your-username/poisoned-dataset-detection.git  
+git clone https://github.com/adityasharmass12/PoisnedGuard
 cd poisoned-dataset-detection  
 
 ### Backend Setup
