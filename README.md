@@ -163,12 +163,11 @@ The Poisoned Dataset Detection System provides a reliable and scalable approach 
 
 Team Name: TEAM LUMEN  
 
-Members:  
-Sameer Shamsi  
-Aditya Sharma  
-Rohit Kumar  
-Tarun Gupta  
-
+Members:
+- Sameer Shamsi
+- Aditya Sharma
+- Rohit Kumar
+- Tarun Gupta
 ---
 
 ## License
