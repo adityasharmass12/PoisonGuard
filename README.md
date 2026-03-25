@@ -95,12 +95,6 @@ project-root/
 
 ---
 
-## Installation
-
-### Clone the Repository
-git clone https://github.com/adityasharmass12/PoisnedGuard
-cd poisoned-dataset-detection  
-
 ### Backend Setup
 cd backend  
 pip install -r requirements.txt  
@@ -177,3 +171,9 @@ Tarun gupta
 
 ## License
 This project is developed for academic, research, and hackathon purposes.
+
+## Installation
+
+### Clone the Repository
+```bash
+git clone https://github.com/your-username/poisoned-dataset-detection.git 
