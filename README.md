@@ -176,4 +176,4 @@ This project is developed for academic, research, and hackathon purposes.
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/your-username/poisoned-dataset-detection.git 
+https://github.com/adityasharmass12/PoisnedGuard.git
