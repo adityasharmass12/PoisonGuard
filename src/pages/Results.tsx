@@ -42,6 +42,19 @@ export function Results({ data, onReset }: ResultsProps) {
 
   const isPhishing = data?.is_phishing ?? data?.isPhishing ?? false;
   const url = data?.url ?? "Unknown URL";
+  const detectionMethod = data?.detectionMethod ?? 'heuristic_only';
+  const note = data?.note ?? '';
+
+  // Format detection method for display
+  const getMethodLabel = () => {
+    switch(detectionMethod) {
+      case 'ml_model': return '🤖 ML Model Detection';
+      case 'heuristic_fallback': return '📊 Heuristic Analysis';
+      case 'heuristic_primary': return '⚡ Quick Heuristic Check';
+      case 'heuristic_only': return '📊 Heuristic Analysis';
+      default: return '🔍 Analysis';
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-[80vh] text-center">
@@ -81,6 +94,24 @@ export function Results({ data, onReset }: ResultsProps) {
             </p>
           </div>
         </div>
+
+        <div className="bg-neon-purple/10 border border-neon-purple/30 rounded-lg p-4 w-full mb-8">
+          <p className="text-neon-purple text-sm">
+            {getMethodLabel()}
+          </p>
+        </div>
+
+        {note && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-neon-yellow/10 border border-neon-yellow/30 rounded-lg p-4 w-full mb-8"
+          >
+            <p className="text-neon-yellow text-sm">
+              ℹ️ {note}
+            </p>
+          </motion.div>
+        )}
 
         {isPhishing && (
           <motion.div

@@ -24,6 +24,8 @@ interface AnalysisResult {
   summary: string;
   score: number;
   preCheckStats?: PreCheckStats;
+  detectionMethod?: string;
+  modelAvailable?: boolean;
 }
 
 interface PreCheckStats {
@@ -123,47 +125,69 @@ async function analyzeWithBackend(
     const fd = new FormData();
     fd.append('file', new File([csv], filename, { type: 'text/csv' }));
 
+    console.log('📤 Sending FormData with CSV to backend...');
+    console.log('📊 FormData contents:', { filename, rows: rows.length, headers });
+    
     const resp = await fetch('http://localhost:5000/api/upload', {
       method: 'POST',
       body: fd,
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(300000), // 5 minutes for large files
     });
 
+    console.log('📥 Backend response:', { status: resp.status, statusText: resp.statusText, ok: resp.ok });
+    
     if (!resp.ok) {
       const e = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+      console.error('❌ Backend HTTP error:', e);
       throw new Error(e.error || `Server error ${resp.status}`);
     }
 
     const br = await resp.json();
+    console.log('✅ Backend response parsed:', { detection_method: br.detection_method, model_available: br.model_available, total: br.total });
 
-    const anomalies: Anomaly[] = [];
-    (br.results || []).forEach((r: any, idx: number) => {
-      if (r.error) {
-        anomalies.push({ row: idx + 1, reason: `Parse error: ${r.error}`, severity: 'medium' });
-      } else if (r.is_phishing) {
-        const sev = r.confidence >= 80 ? 'high' : r.confidence >= 50 ? 'medium' : 'low';
-        const reasons = r.reasons?.length ? ` (${r.reasons[0]})` : '';
-        anomalies.push({ row: idx + 1, reason: `Phishing detected — ${r.confidence}% confidence${reasons}`, severity: sev });
-      }
-    });
+    try {
+      const anomalies: Anomaly[] = [];
+      (br.results || []).forEach((r: any, idx: number) => {
+        if (r.error) {
+          anomalies.push({ row: idx + 1, reason: `Parse error: ${r.error}`, severity: 'medium' });
+        } else if (r.is_phishing) {
+          const sev = r.confidence >= 80 ? 'high' : r.confidence >= 50 ? 'medium' : 'low';
+          const reasons = r.reasons?.length ? ` (${r.reasons[0]})` : '';
+          anomalies.push({ row: idx + 1, reason: `Phishing detected — ${r.confidence}% confidence${reasons}`, severity: sev });
+        }
+      });
 
-    const safeCount = br.safe_count ?? 0;
-    const cleanScore = br.total > 0 ? Math.round((safeCount / br.total) * 100) : 0;
+      const safeCount = br.safe_count ?? 0;
+      const cleanScore = br.total > 0 ? Math.round((safeCount / br.total) * 100) : 0;
+      
+      const detectionMethod = br.detection_method || 'heuristic_only';
+      const modelStatus = br.model_available ? '🤖 ML Model' : '📊 Heuristic Analysis';
 
-    return {
-      totalRows: br.total,
-      cleanRows: safeCount,
-      suspiciousRows: br.phishing_count ?? 0,
-      anomalies: anomalies.slice(0, 30),
-      summary: br.phishing_count === 0
-        ? `✅ All ${br.total} URLs passed ML analysis. No phishing detected.`
-        : `⚠️ ${br.phishing_count} phishing URL(s) found in ${br.total} total. ${safeCount} are safe.`,
-      score: cleanScore,
-      preCheckStats,
-    };
+      return {
+        totalRows: br.total,
+        cleanRows: safeCount,
+        suspiciousRows: br.phishing_count ?? 0,
+        anomalies: anomalies.slice(0, 30),
+        summary: br.phishing_count === 0
+          ? `✅ All ${br.total} URLs passed analysis (${modelStatus}). No phishing detected.`
+          : `⚠️ ${br.phishing_count} phishing URL(s) found in ${br.total} total (${modelStatus}). ${safeCount} are safe.`,
+        score: cleanScore,
+        preCheckStats,
+        detectionMethod,
+        modelAvailable: br.model_available,
+      };
+    } catch (parseErr) {
+      console.error('❌ Error parsing backend response:', parseErr, 'Response:', br);
+      throw new Error(`Failed to parse backend response: ${parseErr}`);
+    }
 
   } catch (fetchErr) {
-    console.warn('Backend unavailable — falling back to heuristic analysis:', fetchErr);
+    console.error('❌ Backend analysis failed with error:', {
+      name: (fetchErr as any).name,
+      message: (fetchErr as any).message,
+      cause: (fetchErr as any).cause,
+      stack: (fetchErr as any).stack,
+    });
 
     // ── Fallback: heuristic-only analysis ────────────────────────────────────
     const anomalies: Anomaly[] = [];
@@ -213,9 +237,11 @@ async function analyzeWithBackend(
       cleanRows,
       suspiciousRows: suspicious,
       anomalies: anomalies.slice(0, 30),
-      summary: `⚠️ ML backend unavailable — heuristic analysis only. ${suspicious} potentially suspicious rows detected. Run the Flask backend for accurate ML predictions.`,
+      summary: `⚠️ Backend connection error — heuristic analysis only. ${suspicious} potentially suspicious rows detected. Ensure Flask backend is running for ML model predictions.`,
       score: cleanScore,
       preCheckStats,
+      detectionMethod: 'heuristic_fallback',
+      modelAvailable: false,
     };
   }
 }

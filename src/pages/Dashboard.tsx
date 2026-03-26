@@ -49,7 +49,7 @@ export function Dashboard({ onScanComplete }: DashboardProps) {
 
       const data = await resp.json();
 
-      // Merge checklist risk into ML result
+      // Merge checklist risk into model result
       const mergedConfidence = Math.min(100,
         Math.max(data.confidence, result.riskScore)
       );
@@ -64,10 +64,11 @@ export function Dashboard({ onScanComplete }: DashboardProps) {
           ...result.warnings,
         ].filter(Boolean),
         checklistRisk: result.overallRisk,
+        detectionMethod: data.detection_method,
       });
 
     } catch (fetchErr) {
-      console.warn('Backend unavailable, using heuristic result:', fetchErr);
+      console.warn('Backend prediction error, using heuristic result:', fetchErr);
 
       // Fallback: use checklist heuristic result
       const isPhishing = result.overallRisk === 'high' || result.overallRisk === 'critical'
@@ -82,7 +83,8 @@ export function Dashboard({ onScanComplete }: DashboardProps) {
             ? result.warnings
             : ['No suspicious patterns detected (heuristic analysis only)'],
           checklistRisk: result.overallRisk,
-          note: 'ML backend unavailable — result based on heuristic pre-checks only',
+          note: 'Backend prediction error — result based on heuristic pre-checks only',
+          detectionMethod: 'heuristic_fallback',
         });
       } else {
         // Looks safe from heuristics
@@ -92,7 +94,8 @@ export function Dashboard({ onScanComplete }: DashboardProps) {
           confidence: 5,
           reasons: ['URL passed all pre-checks (heuristic analysis only)'],
           checklistRisk: 'safe',
-          note: 'ML backend unavailable — result based on heuristic pre-checks only',
+          note: 'Backend prediction error — result based on heuristic pre-checks only',
+          detectionMethod: 'heuristic_fallback',
         });
       }
     }

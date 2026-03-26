@@ -1,6 +1,162 @@
 import re
 from urllib.parse import urlparse
 
+def extract_ml_features(url):
+    """
+    Extract comprehensive URL features for ML model prediction.
+    Returns a dictionary of 97 features expected by XGBoost model.
+    """
+    try:
+        parsed = urlparse(url)
+        domain = parsed.netloc.lower()
+        directory = '/'.join(parsed.path.split('/')[:-1]).lower()
+        file = parsed.path.split('/')[-1].lower() if parsed.path else ''
+        params = parsed.query.lower() if parsed.query else ''
+        full_url = url.lower()
+    except:
+        return None
+    
+    # Initialize features with zeros
+    features = {}
+    
+    # URL-level features
+    features['qty_dot_url'] = full_url.count('.')
+    features['qty_hyphen_url'] = full_url.count('-')
+    features['qty_underline_url'] = full_url.count('_')
+    features['qty_slash_url'] = full_url.count('/')
+    features['qty_questionmark_url'] = full_url.count('?')
+    features['qty_equal_url'] = full_url.count('=')
+    features['qty_at_url'] = full_url.count('@')
+    features['qty_and_url'] = full_url.count('&')
+    features['qty_exclamation_url'] = full_url.count('!')
+    features['qty_space_url'] = full_url.count(' ')
+    features['qty_tilde_url'] = full_url.count('~')
+    features['qty_comma_url'] = full_url.count(',')
+    features['qty_plus_url'] = full_url.count('+')
+    features['qty_asterisk_url'] = full_url.count('*')
+    features['qty_hashtag_url'] = full_url.count('#')
+    features['qty_dollar_url'] = full_url.count('$')
+    features['qty_percent_url'] = full_url.count('%')
+    features['qty_tld_url'] = 1 if '.' in domain else 0
+    features['length_url'] = len(full_url)
+    
+    # Domain-level features
+    features['qty_dot_domain'] = domain.count('.')
+    features['qty_hyphen_domain'] = domain.count('-')
+    features['qty_underline_domain'] = domain.count('_')
+    features['qty_slash_domain'] = domain.count('/')
+    features['qty_questionmark_domain'] = domain.count('?')
+    features['qty_equal_domain'] = domain.count('=')
+    features['qty_at_domain'] = domain.count('@')
+    features['qty_and_domain'] = domain.count('&')
+    features['qty_exclamation_domain'] = domain.count('!')
+    features['qty_space_domain'] = domain.count(' ')
+    features['qty_tilde_domain'] = domain.count('~')
+    features['qty_comma_domain'] = domain.count(',')
+    features['qty_plus_domain'] = domain.count('+')
+    features['qty_asterisk_domain'] = domain.count('*')
+    features['qty_hashtag_domain'] = domain.count('#')
+    features['qty_dollar_domain'] = domain.count('$')
+    features['qty_percent_domain'] = domain.count('%')
+    
+    # Vowel count in domain
+    vowels = 'aeiou'
+    features['qty_vowels_domain'] = sum(1 for c in domain if c in vowels)
+    features['domain_length'] = len(domain)
+    
+    # IP in domain check
+    ip_pattern = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+    features['domain_in_ip'] = 1 if re.search(ip_pattern, domain) else 0
+    
+    # Server/client in domain
+    features['server_client_domain'] = 1 if ('server' in domain or 'client' in domain) else 0
+    
+    # Directory-level features
+    features['qty_dot_directory'] = directory.count('.')
+    features['qty_hyphen_directory'] = directory.count('-')
+    features['qty_underline_directory'] = directory.count('_')
+    features['qty_slash_directory'] = directory.count('/')
+    features['qty_questionmark_directory'] = directory.count('?')
+    features['qty_equal_directory'] = directory.count('=')
+    features['qty_at_directory'] = directory.count('@')
+    features['qty_and_directory'] = directory.count('&')
+    features['qty_exclamation_directory'] = directory.count('!')
+    features['qty_space_directory'] = directory.count(' ')
+    features['qty_tilde_directory'] = directory.count('~')
+    features['qty_comma_directory'] = directory.count(',')
+    features['qty_plus_directory'] = directory.count('+')
+    features['qty_asterisk_directory'] = directory.count('*')
+    features['qty_hashtag_directory'] = directory.count('#')
+    features['qty_dollar_directory'] = directory.count('$')
+    features['qty_percent_directory'] = directory.count('%')
+    features['directory_length'] = len(directory)
+    
+    # File-level features
+    features['qty_dot_file'] = file.count('.')
+    features['qty_hyphen_file'] = file.count('-')
+    features['qty_underline_file'] = file.count('_')
+    features['qty_slash_file'] = file.count('/')
+    features['qty_questionmark_file'] = file.count('?')
+    features['qty_equal_file'] = file.count('=')
+    features['qty_at_file'] = file.count('@')
+    features['qty_and_file'] = file.count('&')
+    features['qty_exclamation_file'] = file.count('!')
+    features['qty_space_file'] = file.count(' ')
+    features['qty_tilde_file'] = file.count('~')
+    features['qty_comma_file'] = file.count(',')
+    features['qty_plus_file'] = file.count('+')
+    features['qty_asterisk_file'] = file.count('*')
+    features['qty_hashtag_file'] = file.count('#')
+    features['qty_dollar_file'] = file.count('$')
+    features['qty_percent_file'] = file.count('%')
+    features['file_length'] = len(file)
+    
+    # Parameter-level features
+    features['qty_dot_params'] = params.count('.')
+    features['qty_hyphen_params'] = params.count('-')
+    features['qty_underline_params'] = params.count('_')
+    features['qty_slash_params'] = params.count('/')
+    features['qty_questionmark_params'] = params.count('?')
+    features['qty_equal_params'] = params.count('=')
+    features['qty_at_params'] = params.count('@')
+    features['qty_and_params'] = params.count('&')
+    features['qty_exclamation_params'] = params.count('!')
+    features['qty_space_params'] = params.count(' ')
+    features['qty_tilde_params'] = params.count('~')
+    features['qty_comma_params'] = params.count(',')
+    features['qty_plus_params'] = params.count('+')
+    features['qty_asterisk_params'] = params.count('*')
+    features['qty_hashtag_params'] = params.count('#')
+    features['qty_dollar_params'] = params.count('$')
+    features['qty_percent_params'] = params.count('%')
+    features['params_length'] = len(params)
+    features['tld_present_params'] = 1 if '.' in params else 0
+    features['qty_params'] = len(params.split('&')) if params else 0
+    
+    # Email and special features
+    features['email_in_url'] = 1 if '@' in full_url else 0
+    features['time_response'] = 0  # Default - not available
+    features['domain_spf'] = 0  # Default - not available
+    features['asn_ip'] = 0  # Default - not available
+    features['time_domain_activation'] = 0  # Default - not available
+    features['time_domain_expiration'] = 0  # Default - not available
+    features['qty_ip_resolved'] = 0  # Default - not available
+    features['qty_nameservers'] = 0  # Default - not available
+    features['qty_mx_servers'] = 0  # Default - not available
+    features['ttl_hostname'] = 0  # Default - not available
+    features['tls_ssl_certificate'] = 0  # Default - not available
+    features['qty_redirects'] = 0  # Default - not available
+    features['url_google_index'] = 0  # Default - not available
+    features['domain_google_index'] = 0  # Default - not available
+    features['url_shortened'] = 0  # Check for URL shorteners
+    
+    # Detect URL shorteners
+    shorteners = ['bit.ly', 'goo.gl', 't.co', 'tinyurl', 'ow.ly', 'short.link']
+    if any(s in domain for s in shorteners):
+        features['url_shortened'] = 1
+    
+    return features
+
 def get_url_features(url):
     """
     Extract phishing detection features from URL.
