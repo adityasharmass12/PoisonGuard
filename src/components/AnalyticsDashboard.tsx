@@ -309,18 +309,18 @@ export function AnalyticsDashboard({ result, fileName }: AnalyticsProps) {
         {/* Radar: pre-check risk levels */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="glass-panel p-6">
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Pre-Check Risk Profile</h3>
-          {pc ? (
+          {pc && pc.total > 0 ? (
             <div style={{ position: 'relative', height: 180 }}>
               <canvas id="radar-chart" ref={radarRef} />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[180px] text-gray-600 text-sm">No pre-check data</div>
+            <div className="flex items-center justify-center h-[180px] text-gray-600 text-sm">No URL pre-check data</div>
           )}
         </motion.div>
       </div>
 
       {/* Pre-check flags row */}
-      {pc && (
+      {pc && pc.total > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="glass-panel p-6">
           <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">URL Threat Indicators</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

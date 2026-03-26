@@ -1,0 +1,8 @@
+﻿src/App.tsx(42,24): error TS2322: Type '{ onUploadComplete: (data: any, file: string) => void; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'onUploadComplete' does not exist on type 'IntrinsicAttributes'.
+src/pages/Upload.tsx(121,39): error TS2304: Cannot find name 'filename'.
+src/pages/Upload.tsx(124,44): error TS18004: No value exists in scope for the shorthand property 'filename'. Either declare one or provide an initializer.
+src/pages/Upload.tsx(398,78): error TS2554: Expected 3 arguments, but got 4.
+src/pages/Upload.tsx(425,19): error TS2304: Cannot find name 'showAll'.
+src/pages/Upload.tsx(630,42): error TS2304: Cannot find name 'setShowAll'.
+src/pages/Upload.tsx(632,22): error TS2304: Cannot find name 'showAll'.

@@ -92,6 +92,8 @@ def predict():
                 
                 # Create DataFrame with features in correct order
                 features_df = pd.DataFrame([ml_features])
+                if feature_names is not None:
+                    features_df = features_df.reindex(columns=feature_names, fill_value=0)
                 
                 ml_prediction = model.predict(features_df)[0]
                 ml_confidence = model.predict_proba(features_df)[0]
@@ -251,6 +253,8 @@ def upload_file():
                             
                             # Create DataFrame with features
                             features_df = pd.DataFrame([ml_features])
+                            if feature_names is not None:
+                                features_df = features_df.reindex(columns=feature_names, fill_value=0)
                             
                             ml_prediction = model.predict(features_df)[0]
                             ml_confidence = model.predict_proba(features_df)[0]

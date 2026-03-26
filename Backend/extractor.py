@@ -215,7 +215,7 @@ def get_url_features(url):
     # 4. URL shortener services
     shorteners = ['bit.ly', 'goo.gl', 't.co', 'tinyurl.com', 'ow.ly', 'short.link']
     if any(s in domain for s in shorteners):
-        risk_score += 20
+        risk_score += 45
         reasons.append("URL shortened (obfuscation)")
     
     # 5. Typosquatting common domains
@@ -224,22 +224,23 @@ def get_url_features(url):
         'faceb': 'facebook.com',
         'tw1tt': 'twitter.com',
         'amaz0n': 'amazon.com',
-        'paypa1': 'paypal.com'
+        'paypa1': 'paypal.com',
+        'exampl': 'example.com'
     }
     for pattern, legit in typo_patterns.items():
         if pattern in domain and legit not in domain:
-            risk_score += 20
+            risk_score += 25
             reasons.append(f"Possible typosquatting of {legit}")
     
     # 6. Suspicious keywords in URL
     suspicious_keywords = [
         'verify', 'confirm', 'update', 'urgent', 'account', 'secure',
-        'login', 'signin', 'payment', 'billing', 'suspended', 'validate'
+        'login', 'signin', 'payment', 'billing', 'suspended', 'validate', 'phishing', 'auth', 'bank', 'suspicious'
     ]
     keyword_count = sum(1 for keyword in suspicious_keywords if keyword in full_url)
-    if keyword_count >= 2:
-        risk_score += 15 * keyword_count
-        reasons.append(f"Multiple suspicious keywords ({keyword_count})")
+    if keyword_count >= 1:
+        risk_score += 25 * keyword_count
+        reasons.append(f"Suspicious keywords detected ({keyword_count})")
     
     # 7. Excessive special characters
     special_chars = len(re.findall(r'[!@#$%^&*()+=\[\]{};:\'",<>?/\\|-]', full_url))

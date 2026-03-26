@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Layout } from './components/Layout';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
-import { Upload } from './pages/Upload';
+import { Upload } from './pages/Uploads';
 import { Analysis } from './pages/Analysis';
 import { Results } from './pages/Results';
 import { About } from './pages/About';
