@@ -4,7 +4,25 @@ import joblib
 import pandas as pd
 import io
 import os
+import hashlib
+import time
 from extractor import get_url_features
+# Optional pre-checks: redirection, firewall, paywall, cached results
+# DISABLED by default for upload speed (enable by setting ENABLE_PRECHECK=1 env var)
+import os as _os_env
+precheck_url = None
+if _os_env.getenv('ENABLE_PRECHECK') == '1':
+    try:
+        from precheck import precheck_url
+    except Exception:
+        precheck_url = None
+
+# Optional upload result caching
+try:
+    from cache_db import get_cached_result, store_cached_result
+except Exception:
+    get_cached_result = None
+    store_cached_result = None
 
 app = Flask(__name__)
 # CRITICAL: This allows your React app (port 3000) to talk to this API (port 5000)
@@ -57,9 +75,32 @@ def upload_file():
     
     file = request.files['file']
     
+    # Compute file hash for caching
+    file_bytes = file.stream.read()
+    file_hash = hashlib.sha256(file_bytes).hexdigest()
+    file.stream.seek(0)  # Reset stream for CSV reading
+    file_size = len(file_bytes)
+    filename = file.filename or 'unknown'
+    
+    print(f"📋 File: {filename}, Hash: {file_hash[:16]}..., Size: {file_size} bytes")
+    
+    # Check cache first
+    if get_cached_result:
+        cached = get_cached_result(file_hash)
+        if cached:
+            print(f"✅ Cache HIT! Returning cached result for {filename}")
+            return jsonify({
+                "total": cached['total'],
+                "phishing_count": cached['phishing_count'],
+                "safe_count": cached['safe_count'],
+                "results": cached['results'],
+                "from_cache": True,
+                "cached_at": cached['checked_at']
+            })
+    
     try:
         # Read CSV
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        stream = io.StringIO(file_bytes.decode("UTF8"), newline=None)
         df = pd.read_csv(stream)
         print(f"📊 CSV Loaded. Rows: {len(df)}")
 
@@ -73,10 +114,19 @@ def upload_file():
         results = []
         phishing_count = 0
         safe_count = 0
+        checked_at = time.time()
         
         # Process all URLs with heuristic detector
         for idx, url in enumerate(df[url_col]):
             try:
+                # Run lightweight pre-check (non-blocking if module absent)
+                pre = None
+                try:
+                    if precheck_url:
+                        pre = precheck_url(str(url))
+                except Exception as pre_err:
+                    pre = {"error": f"precheck_failed: {pre_err}"}
+
                 # Use heuristic detector
                 result = get_url_features(str(url))
                 
@@ -97,12 +147,15 @@ def upload_file():
                 else:
                     safe_count += 1
                 
-                results.append({
+                out = {
                     "url": str(url),
                     "is_phishing": bool(is_phishing),
                     "confidence": round(confidence, 2),
                     "reasons": result.get("reasons", [])
-                })
+                }
+                if pre is not None:
+                    out["precheck"] = pre
+                results.append(out)
                 
                 # Print progress every 50 rows
                 if (idx + 1) % 50 == 0:
@@ -110,21 +163,38 @@ def upload_file():
                     
             except Exception as url_err:
                 print(f"⚠️  Error processing URL at row {idx}: {url_err}")
-                results.append({
+                out_err = {
                     "url": str(url),
                     "is_phishing": False,
                     "confidence": 0,
                     "error": str(url_err)
-                })
+                }
+                try:
+                    if precheck_url:
+                        pre = precheck_url(str(url))
+                        out_err["precheck"] = pre
+                except Exception:
+                    pass
+                results.append(out_err)
         
         print(f"✅ Analysis Complete: {phishing_count} phishing, {safe_count} safe out of {total_rows}")
         
-        return jsonify({
+        response_data = {
             "total": total_rows,
             "phishing_count": phishing_count,
             "safe_count": safe_count,
-            "results": results
-        })
+            "results": results,
+            "from_cache": False
+        }
+        
+        # Store in cache
+        if store_cached_result:
+            try:
+                store_cached_result(file_hash, filename, file_size, checked_at, total_rows, phishing_count, safe_count, results)
+            except Exception as cache_err:
+                print(f"⚠️ Cache store failed: {cache_err}")
+        
+        return jsonify(response_data)
 
     except Exception as e:
         print(f"❌ PROCESS ERROR: {e}")
